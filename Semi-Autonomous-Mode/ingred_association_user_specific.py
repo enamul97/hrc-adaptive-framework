@@ -3,6 +3,7 @@ from mlxtend.frequent_patterns import apriori
 from mlxtend.frequent_patterns import association_rules
 import matplotlib.pyplot as plt
 import pandas as pd
+import collections
 
 
 def analyze_user_rules(data, user_id=1, min_support=0.1, min_confidence=0.3, top_n=20):
@@ -42,6 +43,27 @@ def analyze_user_rules(data, user_id=1, min_support=0.1, min_confidence=0.3, top
     filtered_rules['rule_str'] = filtered_rules.apply(lambda x: f"{x['antecedents_str']} → {x['consequents_str']}",
                                                       axis=1)
     filtered_rules = filtered_rules.sort_values('confidence', ascending=True)
+    ingred_dic = collections.defaultdict(list)
+    data = []
+    for _, r in filtered_rules.iterrows():
+        antecedents = frozenset(r['antecedents'])
+        consequents = frozenset(r['consequents'])
+        confidence = r['confidence']
+        ingred_dic[antecedents].append((confidence, consequents))
+
+    for antecedent, values in ingred_dic.items():
+        for confidence, consequent in values:
+            data.append({
+                'Antecedent': ', '.join(antecedent),
+                'Consequent': ', '.join(consequent),
+                'Confidence': confidence
+            })
+    df = pd.DataFrame(data)
+    output_file = f"ingred_rules_user_{user_id}.xlsx"
+    df.to_excel(output_file, index=False)
+    print(f"Dictionary exported to {output_file}")
+
+
     plt.figure(figsize=(14, 6))
     plt.gca().set_facecolor('#f5f5f5')
     plt.gcf().set_facecolor('#f5f5f5')
